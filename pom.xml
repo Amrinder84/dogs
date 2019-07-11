@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>dzcs</docker.image.prefix>
-        <docker.image.version>0.1</docker.image.version>
+        <docker.image.version>0.2</docker.image.version>
     </properties>
 
     <dependencyManagement>
