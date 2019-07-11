@@ -1,0 +1,262 @@
+################################################################################
+##                                                                            ##
+## file: dogs.ver.yaml                         (c) Wolfram Plettscher 06/2019 ##
+## openAPI Swagger File                                                       ##
+##                                                                            ##
+################################################################################
+
+# we derive from best practices standards to use JSON files for two reasons:
+# - WSO2AM does not import JSON
+# - JSON does not allow to include comments
+# no problem: a yaml file read in by WSO2AM can be exported as JSON
+
+openapi: 3.0.0
+info:
+  title: Dogs2
+  description: "Test API for server-side API implementation"
+  version: v0.2
+
+################################################################################
+servers:
+  - url: "https://apimgr.tsys.koeln:8243/animals/v0.2"
+    description: "Only production server available"
+
+paths:
+
+  ################################################################################
+  # root: will give base links to properties                                     #
+  ################################################################################
+  /:
+    get:
+      summary: give base links to properties
+      responses:
+        "200":
+          description: A single dog information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  self:
+                    type: string
+                    example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/'
+                  kind:
+                    type: string
+                    example: 'Page'
+  # not implemented yet, will be added later
+  #                 dogs:
+  #                   type: string
+  #                   example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs'
+  #                 owners:
+  #                   type: string
+  #                   example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/owners'
+
+  ################################################################################
+  # return simple string                                                         #
+  ################################################################################
+  /easy:
+    get:
+      summary: a minimal test API
+      responses:
+        "200":
+          description: Return Hello World
+          content:
+            application/text:
+              schema:
+                type: string
+                example: Hello World
+
+  ################################################################################
+  # get all dogs                                                                 #
+  ################################################################################
+  "/dogs":
+    get:
+      tags:
+        - dog
+      operationId: getDogsList
+      summary: Returns a list of all dogs
+
+      ##########################################################################
+      parameters:
+        - name: size
+          in: query
+          required: false
+          description: the size of page in elements
+          schema:
+            type: number
+        - name: page
+          in: query
+          required: false
+          description: the page number
+          schema:
+            type: number
+
+      ##########################################################################
+      responses:
+        "200":
+          description: Response delivers the list of dogs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DogList'
+        "303":
+          description: See Other. Redirect in case of to much results
+          headers:
+            Location:
+              required: true
+              description: The new location with fetch limits
+              schema:
+                type: string
+                example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs?page=25&size=25'
+        "400":
+          description: >
+            Bad request response returned in following cases:
+            * if only one parameter specified. There are two states expected: no parameters or all parameters
+            * if page parameter is less than 1
+            * if size parameter is less than 1
+        "505":
+          description: Internal server error. By any unexpected server failure.
+        default:
+          description: Unexpected error
+
+  ################################################################################
+  # get dog by it's name                                                         #
+  ################################################################################
+  "/dogs/{dogName}":
+    get:
+      tags:
+        - dog
+      summary: Returns details of a single dog by name (name must be unique)
+
+      ##########################################################################
+      parameters:
+        - name: dogName
+          in: path
+          required: true
+          description: the (by convention unique) name of a dog
+          schema:
+            type: string
+
+      #       - name: 'Authorization: Bearer '
+      #         in: header
+      #         required: true
+      #         description: Token given by API-Manager to validate access
+      #         schema:
+      #           type: string
+
+      ##########################################################################
+      responses:
+        "200":
+          description: A single dog information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+
+        "404":
+          description: A dog with the specified dogName was not found.
+
+        default:
+          description: Unexpected error
+
+      x-auth-type: "Application & Application User"
+      x-throttling-tier: Unlimited
+
+################################################################################
+security:
+  - BasicAuth: []
+
+components:
+  schemas:
+    DogsObject:
+      type: object
+      required:
+        - self
+        - kind
+      properties:
+        self:
+          type: string
+          example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs/Bello'
+          title: The link to this particular data element
+        kind:
+          type: string
+          title: The type of object
+          example: "Page"
+          enum:
+            - Page
+            - Dog
+          description: >
+            The element can take one of the following values:
+            * 'Page' - defines technical page
+            * 'Dog' - defines object Dog
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/DogsObject'
+        - title: A dog objecct
+        - type: object
+        - required:
+            - uuid
+            - dogName
+            - dogRace
+            - owner
+          properties:
+            uuid:
+              type: string
+              example: '12345678901234567890'
+            dogName:
+              type: string
+              example: Bello
+            dogRace:
+              title: Dog breed
+              type: string
+              example: 'Golden Retriever'
+            owner:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/owners/Jens'
+    DogList:
+      allOf:
+        - $ref: '#/components/schemas/DogsObject'
+        - title: The list of dogs returned by list service
+        - type: object
+        - required:
+            - pageOf
+            - contents
+          properties:
+            pageOf:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs'
+            next:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs?page=25&size=25'
+              title: Link to next available content
+            previous:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs?page=25&size=25'
+              title: Link to previous range
+            first:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs?page=25&size=25'
+              title: Link to first range
+            last:
+              type: string
+              example: 'https://apimgr.tsys.koeln:8243/animals/v0.2/dogs?page=25&size=25'
+              title: Link to last range
+            contents:
+              type: array
+              title: Found elements.
+              items:
+                $ref: '#/components/schemas/Dog'
+              description: >
+                Found elements. Number of elements is less or equals to limit parameter in self link.
+
+
+
+
+
+
+
+
+
+
+
+

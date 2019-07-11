@@ -12,7 +12,11 @@ import javax.validation.constraints.NotNull;
  */
 @Entity
 @Table(name="dogs")
-public class Dog {
+public class Dog extends DogsObject {
+
+    public Dog() {
+        setKind("Dog");
+    }
 
     @Id
     @Column(name="uuid")
@@ -30,19 +34,6 @@ public class Dog {
     @Column(name="besitzer")
     private String owner;
 
-    @Transient
-    private String self;
-
-    public String getKind() {
-        return kind;
-    }
-
-    public void setKind(String kind) {
-        this.kind = kind;
-    }
-
-    @Transient
-    private String kind = "Page";
 
     public String getUuid() {
         return uuid;
@@ -76,11 +67,4 @@ public class Dog {
         this.owner = owner;
     }
 
-    public String getSelf() {
-        return self;
-    }
-
-    public void setSelf(String self) {
-        this.self = self;
-    }
 }
